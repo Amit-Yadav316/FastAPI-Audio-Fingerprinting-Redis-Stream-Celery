@@ -9,3 +9,9 @@ matplotlib
 scipy
 python-dotenv
 redis
+aiofiles
+httpx
+pydantic_settings
+asyncpg
+python-multipart
+psycopg2-binary

@@ -1,28 +1,40 @@
-import requests
-import json
+import httpx
+from fastapi import HTTPException, status
 from app.config import settings
-from redis.cache import get_cached_metadata,cache_metadata
-from fastapi import HTTPException, status, BackgroundTasks
+from .redis_cache import get_cached_metadata, cache_metadata
 
-def get_yt_metadata(query:str, background_tasks: BackgroundTasks):
-    cache_key= f"youtube:{query.lower()}"
-    cached = get_cached_metadata(cache_key)
-    if cached  :
+
+async def get_yt_metadata(query: str) -> dict:
+    cache_key = f"youtube:{query.lower()}"
+    cached = await get_cached_metadata(cache_key)
+    if cached:
         return cached
-    url = f"https://www.googleapis.com/youtube/v3/search"
+
+    url = "https://www.googleapis.com/youtube/v3/search"
     params = {
         "part": "snippet",
         "q": query,
         "type": "video",
-        "key": settings.YOUTUBE_API_KEY,
+        "key": settings.youtube_api_key,
+        "maxResults": 1,
     }
-    response = requests.get(url, params=params)
-    if response.status_code != 200:
-        return None
+
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            response = await client.get(url, params=params)
+        response.raise_for_status()
+    except httpx.RequestError as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to fetch YouTube metadata: {str(e)}"
+        )
 
     items = response.json().get("items", [])
     if not items:
-        return None
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No video found for the given query"
+        )
 
     video = items[0]
     yt_metadata = {
@@ -31,6 +43,7 @@ def get_yt_metadata(query:str, background_tasks: BackgroundTasks):
         "thumbnail_url": video["snippet"]["thumbnails"]["high"]["url"]
     }
 
-    background_tasks.add(cache_metadata, cache_key, yt_metadata)
-
+    await cache_metadata(cache_key, yt_metadata)
     return yt_metadata
+
+
