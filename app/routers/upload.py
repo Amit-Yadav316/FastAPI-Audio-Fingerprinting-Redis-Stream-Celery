@@ -7,10 +7,6 @@ import os
 router = APIRouter()
 
 
-UPLOADS_DIR = "uploads"
-if not os.path.exists(UPLOADS_DIR):
-    os.makedirs(UPLOADS_DIR)
-
 @router.post("/upload")
 async def upload(
     background_tasks: BackgroundTasks,

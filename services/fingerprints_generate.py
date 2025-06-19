@@ -2,6 +2,9 @@ import librosa
 import numpy as np
 import scipy
 from hashlib import sha1
+import logging
+
+logger = logging.getLogger(__name__)
 
 def generate_fingerprint(
     audio_path: str,
@@ -10,15 +13,27 @@ def generate_fingerprint(
     sr: int = 22050,
     fan_value: int = 10,
 ) -> list[tuple[str, float]]:
-    y, sr = librosa.load(audio_path, sr=sr, mono=True)
-    fingerprints = []
+    try:
+        y, sr = librosa.load(audio_path, sr=sr, mono=True)
+    except Exception as e:
+        logger.error(f"[ERROR] Failed to load audio: {e}")
+        return []
 
+    if y is None or len(y) == 0:
+        logger.error(f"[ERROR] No audio data found in: {audio_path}")
+        return []
+
+    logger.debug(f"[DEBUG] Audio loaded: {len(y) / sr:.2f}s")
+
+    fingerprints = []
     for start in np.arange(0, len(y), step_duration * sr):
         end = int(start + window_duration * sr)
         if end > len(y):
             break
         window = y[int(start):end]
         fingerprints.extend(hashing(window, start / sr, fan_value, sr))
+
+    logger.debug(f"[DEBUG] Total fingerprints generated: {len(fingerprints)}")
     return fingerprints
 
 def hashing(window: np.ndarray, offset: float, fan_value: int, sr: int) -> list[tuple[str, float]]:
@@ -44,3 +59,4 @@ def hashing(window: np.ndarray, offset: float, fan_value: int, sr: int) -> list[
                     time_offset = t1 * hop_length / sr + offset
                     fingerprints.append((h, time_offset))
     return fingerprints
+

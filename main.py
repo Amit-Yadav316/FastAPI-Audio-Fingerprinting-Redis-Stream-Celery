@@ -10,12 +10,8 @@ app = FastAPI()
 
 @app.on_event("startup")
 async def startup_event():
-    ensure_database_exists()
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-
-
+    await ensure_database_exists()
+    
 app.include_router(upload_router, tags=["Upload"])
 app.include_router(websocket_router, tags=["WebSocket"])
 

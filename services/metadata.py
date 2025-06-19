@@ -1,9 +1,10 @@
 import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
-from database.database import AsyncSessionLocal as async_session  
+from database.database import async_session_maker as async_session  
 from models.models import Song
 from .spotifyservice import search_spotify_metadata
 from .youtubeservice import get_yt_metadata
+from fastapi import HTTPException,status
 
 async def get_metadata(song_id: int, raw_title: str) -> None:
     async with async_session() as db:  
@@ -29,5 +30,5 @@ async def get_metadata(song_id: int, raw_title: str) -> None:
 
         except Exception as e:
             await db.rollback()
-            print("Metadata fetch failed:", str(e))
+            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,detail=f"Failed to connect to Spotify: {str(e)}")
 

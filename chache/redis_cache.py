@@ -2,12 +2,7 @@ import json
 import redis.asyncio as redis
 from app.config.config import settings
 
-redis_client = redis.Redis(
-    host="localhost",
-    port=6379,
-    db=0,
-    decode_responses=True
-)
+redis_client = redis.Redis.from_url(settings.redis_cache_url)
 
 async def get_cached_metadata(key: str):
     try:

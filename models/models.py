@@ -1,10 +1,9 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, JSON
-from sqlalchemy.orm import relationship 
+from sqlalchemy.orm import relationship
 from database.database import Base
 
-
 class Song(Base):
-    __tablename__ = "Songs"
+    __tablename__ = "songs"  
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True)
@@ -15,11 +14,11 @@ class Song(Base):
 
 
 class Fingerprint(Base):
-    __tablename__ = "Fingerprints"
+    __tablename__ = "fingerprints"  
 
     id = Column(Integer, primary_key=True, index=True)
     hash = Column(String, index=True)
     offset = Column(Integer, index=True)
-    song_id = Column(Integer, ForeignKey("Songs.id"))
+    song_id = Column(Integer, ForeignKey("songs.id"))  
 
     song = relationship("Song", back_populates="fingerprints")

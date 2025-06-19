@@ -4,11 +4,11 @@ from sqlalchemy import select, delete
 from models.models import Song
 from models.models import Fingerprint
 from services.metadata import get_metadata
-from services.fingerprints_generate import generate_fingerprint
 import uuid
 import os
 from pathlib import Path
 import aiofiles
+from celery_worker.tasks import generate_fingerprint_task
 
 
 async def upload_file(
@@ -18,9 +18,13 @@ async def upload_file(
 ):
     if not file.filename.lower().endswith((".wav", ".mp3", ".flac")):
         raise HTTPException(status_code=400, detail="Invalid file type")
+    
+    UPLOADS_DIR = "uploads"
+    if not os.path.exists(UPLOADS_DIR):
+     os.makedirs(UPLOADS_DIR)
 
     file_id = f"{uuid.uuid4()}_{file.filename}"
-    file_path = Path(os.path.UPLOADS_DIR) / file_id
+    file_path = Path(UPLOADS_DIR) / file_id
 
     try:
         async with aiofiles.open(file_path, "wb") as out_file:
@@ -34,23 +38,12 @@ async def upload_file(
     if result.scalars().first():
         return {"message": "File already exists"}
 
-
-    try:
-        fingerprints = generate_fingerprint(str(file_path))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Fingerprinting failed: {str(e)}")
-
     new_song = Song(title=file.filename)
     db.add(new_song)
     await db.commit()
     await db.refresh(new_song)
 
-
-    db.add_all([
-        Fingerprint(hash=h, offset=offset, song_id=new_song.id)
-        for h, offset in fingerprints
-    ])
-    await db.commit()
+    generate_fingerprint_task.delay(new_song.id, str(file_path))
 
     background_tasks.add_task(get_metadata, new_song.id, file.filename)
 

@@ -9,10 +9,11 @@ router = APIRouter()
 
 
 @router.websocket("/ws/match")
-async def match_songs(ws: WebSocket, db: AsyncSession = Depends(get_db)):
+async def match_songs(ws: WebSocket):
     await ws.accept()
     try:
-        await process_and_match_audio(ws, db)
+        async with get_db() as db:
+            await process_and_match_audio(ws, db)
     except Exception as e:
+        await ws.send_json({"error": "Internal server error. Please try again later."})
         await ws.close(code=1001)
-        print("WebSocket error:", e)
