@@ -1,10 +1,12 @@
 import asyncio
+import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.database import async_session_maker as async_session  
 from models.models import Song
 from .spotifyservice import search_spotify_metadata
 from .youtubeservice import get_yt_metadata
-from fastapi import HTTPException,status
+
+logger = logging.getLogger(__name__)
 
 async def get_metadata(song_id: int, raw_title: str) -> None:
     async with async_session() as db:  
@@ -17,18 +19,23 @@ async def get_metadata(song_id: int, raw_title: str) -> None:
             )
 
             if not spotify_metadata or not youtube_metadata:
-                raise Exception("Metadata fetch failed for Spotify or YouTube")
+                logger.warning(f"[Metadata Missing] Spotify or YouTube metadata not found for '{raw_title}'")
+                return 
 
             song = await db.get(Song, song_id)
             if not song:
-                raise Exception(f"Song with ID {song_id} not found")
+                logger.error(f"[DB Error] Song with ID {song_id} not found in DB")
+                return
 
             song.spotify_data = spotify_metadata
             song.youtube_data = youtube_metadata
             await db.commit()
             await db.refresh(song)
 
+            logger.info(f"[Metadata Saved] Metadata successfully saved for song ID {song_id}")
+
         except Exception as e:
             await db.rollback()
-            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,detail=f"Failed to connect to Spotify: {str(e)}")
+            logger.exception(f"[Metadata Fetch Failed] For song ID {song_id}, title: '{raw_title}'. Error: {str(e)}")
+
 

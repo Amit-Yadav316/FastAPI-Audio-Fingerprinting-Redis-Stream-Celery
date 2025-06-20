@@ -36,21 +36,20 @@ async def upload_file(
 
     result = await db.execute(select(Song).where(Song.title == file.filename))
     if result.scalars().first():
-        return {"message": "File already exists"}
+        return {"message": "File already exists"} 
 
     new_song = Song(title=file.filename)
     db.add(new_song)
     await db.commit()
     await db.refresh(new_song)
 
-    generate_fingerprint_task.delay(new_song.id, str(file_path))
+    task = generate_fingerprint_task.delay(new_song.id, str(file_path))
 
     background_tasks.add_task(get_metadata, new_song.id, file.filename)
 
     return {
-        "message": "File uploaded and fingerprinted",
-        "song_id": new_song.id,
-        "title": new_song.title
+        "message": "File Uploaded",
+        "task_id": task.id
     }
 
 

@@ -57,6 +57,6 @@ def hashing(window: np.ndarray, offset: float, fan_value: int, sr: int) -> list[
                 if 0 < delta_t <= 200:
                     h = sha1(f"{f1}|{f2}|{delta_t}".encode()).hexdigest()[:20]
                     time_offset = t1 * hop_length / sr + offset
-                    fingerprints.append((h, time_offset))
+                    fingerprints.append((h, float(time_offset)))
     return fingerprints
 
