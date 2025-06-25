@@ -1,10 +1,11 @@
 import httpx
-from fastapi import HTTPException, status
+import logging
 from app.config.config import settings
 from chache.redis_cache import get_cached_metadata, cache_metadata
 
+logger = logging.getLogger(__name__)
 
-async def get_yt_metadata(query: str) -> dict:
+async def get_yt_metadata(query: str) -> dict | None:
     cache_key = f"youtube:{query.lower()}"
     cached = await get_cached_metadata(cache_key)
     if cached:
@@ -22,19 +23,18 @@ async def get_yt_metadata(query: str) -> dict:
     try:
         async with httpx.AsyncClient(timeout=5) as client:
             response = await client.get(url, params=params)
-        response.raise_for_status()
+            response.raise_for_status()
     except httpx.RequestError as e:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Failed to fetch YouTube metadata: {str(e)}"
-        )
+        logger.error(f"[YouTube Request Error] {e}")
+        return None
+    except httpx.HTTPStatusError as e:
+        logger.error(f"[YouTube API Error] {e.response.status_code} - {e.response.text}")
+        return None
 
     items = response.json().get("items", [])
     if not items:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No video found for the given query"
-        )
+        logger.warning(f"[YouTube] No results found for query: {query}")
+        return None
 
     video = items[0]
     yt_metadata = {

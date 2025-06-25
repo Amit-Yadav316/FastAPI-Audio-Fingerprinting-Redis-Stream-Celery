@@ -1,8 +1,8 @@
-import librosa
 import numpy as np
 import scipy
 from hashlib import sha1
 import logging
+import librosa
 
 logger = logging.getLogger(__name__)
 

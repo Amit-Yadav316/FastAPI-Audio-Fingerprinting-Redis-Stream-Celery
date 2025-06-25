@@ -8,8 +8,8 @@ import uuid
 import os
 from pathlib import Path
 import aiofiles
-from celery_worker.tasks import generate_fingerprint_task
-
+from celery_worker.tasks.fingerprinting import generate_fingerprint_task
+import asyncio
 
 async def upload_file(
     background_tasks: BackgroundTasks,
@@ -18,39 +18,39 @@ async def upload_file(
 ):
     if not file.filename.lower().endswith((".wav", ".mp3", ".flac")):
         raise HTTPException(status_code=400, detail="Invalid file type")
-    
-    UPLOADS_DIR = "uploads"
-    if not os.path.exists(UPLOADS_DIR):
-     os.makedirs(UPLOADS_DIR)
 
-    file_id = f"{uuid.uuid4()}_{file.filename}"
+    UPLOADS_DIR = "uploads"
+    os.makedirs(UPLOADS_DIR, exist_ok=True)
+
+    original_filename = file.filename
+    file_id = f"{uuid.uuid4()}_{original_filename}"
     file_path = Path(UPLOADS_DIR) / file_id
 
     try:
         async with aiofiles.open(file_path, "wb") as out_file:
-            while chunk := await file.read(1024 * 1024): 
+            while chunk := await file.read(1024 * 1024):
                 await out_file.write(chunk)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error saving file: {str(e)}")
 
-
-    result = await db.execute(select(Song).where(Song.title == file.filename))
+    result = await db.execute(select(Song).where(Song.title == original_filename))
     if result.scalars().first():
-        return {"message": "File already exists"} 
+        return {"message": "File already exists"}
 
-    new_song = Song(title=file.filename)
+    new_song = Song(title=original_filename)
     db.add(new_song)
     await db.commit()
     await db.refresh(new_song)
 
     task = generate_fingerprint_task.delay(new_song.id, str(file_path))
 
-    background_tasks.add_task(get_metadata, new_song.id, file.filename)
+    asyncio.create_task(get_metadata(new_song.id, original_filename))
 
     return {
-        "message": "File Uploaded",
+        "message": "File uploaded successfully",
         "task_id": task.id
     }
+
 
 
 async def delete_upload(name: str, db: AsyncSession):

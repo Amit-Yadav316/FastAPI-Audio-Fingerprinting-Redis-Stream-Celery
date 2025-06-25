@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     redis_cache_url: str = Field(...,env="REDIS_CACHE_URL")
     redis_celery_broker_url: str = Field(...,env="REDIS_CELERY_BROKER_URL")
     redis_celery_backend_url: str = Field(...,env="REDIS_CELERY_BACKEND_URL")
+    redis_pubsub_url: str = Field(...,env="REDIS_PUBSUB_URL")
 
     class Config:
         env_file = ".env"

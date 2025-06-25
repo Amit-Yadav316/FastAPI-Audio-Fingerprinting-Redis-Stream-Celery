@@ -1,18 +1,13 @@
-from fastapi import APIRouter,WebSocket
-from database.database import get_db
-from services.checkmatches import process_and_match_audio
+from fastapi import APIRouter, UploadFile, File
+from services.checkmatches import match_songs
+from fastapi import Form
 
 router = APIRouter()
 
+@router.post("/match")
+async def matched(file: UploadFile = File(...),task_id: str = Form(...)):
+   return await match_songs(file,task_id)
 
 
+    
 
-@router.websocket("/ws/match")
-async def match_songs(ws: WebSocket):
-    await ws.accept()
-    try:
-        async with get_db() as db:
-            await process_and_match_audio(ws, db)
-    except Exception as e:
-        await ws.send_json({"error": "Internal server error. Please try again later."})
-        await ws.close(code=1001)

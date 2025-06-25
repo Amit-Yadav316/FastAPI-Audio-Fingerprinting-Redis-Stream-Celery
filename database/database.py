@@ -20,7 +20,13 @@ Base = declarative_base()
 
 async def get_db():
     async with async_session_maker() as session:
-        yield session
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
 
 SYNC_DATABASE_URL = settings.database_url 
 

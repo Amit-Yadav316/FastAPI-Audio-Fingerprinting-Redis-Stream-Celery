@@ -7,6 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css" />
+  <link href="/src/output.css" rel="stylesheet">
 </head>
 <body>
   <div class="container">
@@ -35,11 +36,11 @@
   </div>
   <div class="progress-text" id="progressText">0%</div>
 </div>
-
-
-    <h3 style="align-self: middle; margin: 10px 0;">Top Matches on YouTube</h3>
-    <div class="youtube-results" id="results">
-    </div>
+<div id="spinner" class="hidden flex justify-center mt-4">
+  <div class="w-12 h-12 border-4 border-dashed rounded-full animate-spin border-white-500"></div>
+</div>
+<p id="spinnerText" class="hidden text-center text-sm text-gray-500 mt-2">Matching song...</p>
+<div id="results"></div>
   </div>
 
   <script src="script.js"></script>

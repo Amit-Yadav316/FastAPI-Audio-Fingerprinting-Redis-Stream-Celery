@@ -15,7 +15,8 @@ async def get_metadata(song_id: int, raw_title: str) -> None:
             youtube_task = asyncio.create_task(get_yt_metadata(raw_title))
 
             spotify_metadata, youtube_metadata = await asyncio.gather(
-                spotify_task, youtube_task
+                spotify_task, youtube_task,
+                return_exceptions=True
             )
 
             if not spotify_metadata or not youtube_metadata:
