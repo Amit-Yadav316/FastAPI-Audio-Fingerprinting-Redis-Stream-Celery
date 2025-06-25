@@ -24,6 +24,9 @@
 -> **YouTube Metadata Support**  
   Enriches results with YouTube video links for matched songs.
 
+--->  
+##  Getting Started
+
 ---->
 ![Screenshot 2025-06-25 204911](https://github.com/user-attachments/assets/8e8dcba3-dc25-4e2a-bc42-828f5a7b2b41)
 ![Screenshot 2025-06-25 182457](https://github.com/user-attachments/assets/2b8013b9-24bb-43f6-8dfa-9165437bd635)
