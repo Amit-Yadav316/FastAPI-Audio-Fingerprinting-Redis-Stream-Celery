@@ -8,7 +8,6 @@ from redis.asyncio import Redis
 import json
 from app.config.config import settings
 import time 
-from celery_worker.ping import ping_ws
 
 router = APIRouter()
 
@@ -52,7 +51,7 @@ async def task_status_ws(task_id: str, websocket: WebSocket):
 redis_stream = Redis.from_url(settings.redis_pubsub_url, decode_responses=True)
 
 @router.websocket("/ws/subscribe/{task_id}")
-async def subscribe_to_task(task_id: str, ws: WebSocket, timeout: float = 100.0):
+async def subscribe_to_task(task_id: str, ws: WebSocket, timeout: float = 150.0):
     await ws.accept()
     print(redis_stream.connection_pool.connection_kwargs)
     stream_key = f"match_result_stream:{task_id}"

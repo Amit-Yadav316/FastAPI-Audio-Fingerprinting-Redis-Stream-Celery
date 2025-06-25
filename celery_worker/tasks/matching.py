@@ -34,9 +34,6 @@ def match_fingerprint_task(self, audio_path: str, task_id: str):
     db = SessionLocal()
 
     try:
-        if not audio_path.exists():
-            raise FileNotFoundError(f"File does not exist: {audio_path}")
-
         fingerprints = generate_fingerprint(audio_path)
         if not fingerprints:
             redis_stream.xadd(f"match_result_stream:{task_id}", {
