@@ -26,11 +26,11 @@
 
 --->  
 ##  Getting Started
-Step 1 : git clone this url
+Step 1 : git clone URL into directory and code . In Windows Powershell
 ![Screenshot 2025-06-25 211204](https://github.com/user-attachments/assets/ad282679-f072-4728-b158-79d7f1f42370)
 
 Step 2 : Create virtual environment
-![Screenshot 2025-06-25 210814](https://github.com/user-attachments/assets/92b9e2ba-13af-42f1-bfcb-391b75812b11)
+![Screenshot 2025-06-25 210747](https://github.com/user-attachments/assets/aea5f096-bec6-46e4-a7bb-cc9e0f9ddf12)
 
 Step 3 : Activate it and Run this (if you are on WINDOWS >> venv\Scripts\activate)
 ![Screenshot 2025-06-25 210814](https://github.com/user-attachments/assets/61b45c33-6382-450e-a1e8-790b09fb9b01)
@@ -56,13 +56,13 @@ STEP 8 : THEN COME BACK TO VS CODE AND THEN --> Open another terminal in vscode 
 Step 9 : Use POSTMAN to test endpoints 
 These are my results
 ---->
-![Screenshot 2025-06-25 204911](https://github.com/user-attachments/assets/8e8dcba3-dc25-4e2a-bc42-828f5a7b2b41)
 ![Screenshot 2025-06-25 182457](https://github.com/user-attachments/assets/2b8013b9-24bb-43f6-8dfa-9165437bd635)
 ![Screenshot 2025-06-25 182538](https://github.com/user-attachments/assets/2084750b-e451-4889-aa16-6979eae012bb)
 ![Screenshot 2025-06-25 182616](https://github.com/user-attachments/assets/37f1d868-0412-462e-8c96-383848c4341c)
 
 Step 10 : You can create your front end and test and integrate and new things like fuzzy search , humming detection etc..
 BOOM YOU ARE DONE!!
+
 
 ## Why This Project?
 
