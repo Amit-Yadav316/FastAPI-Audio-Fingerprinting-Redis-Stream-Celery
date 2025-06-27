@@ -9,26 +9,21 @@ from services.fingerprints_generate import generate_fingerprint
 from celery_worker import celery_app
 import redis
 from app.config.config import settings
+import os
 
-redis_stream = redis.Redis.from_url(settings.redis_pubsub_url)
+redis_stream = redis.Redis.from_url(settings.redis_stream_url)
 
 @celery_app.task(bind=True, name="match_fingerprint_task", max_retries=2)
 def match_fingerprint_task(self, audio_path: str, task_id: str):
-    print(redis_stream.connection_pool.connection_kwargs)
     try:
-        audio_path = Path(audio_path)
         audio = AudioSegment.from_file(audio_path, format="webm")
         audio = audio.set_frame_rate(22050).set_channels(1)
         mp3_path = Path(audio_path).with_suffix(".mp3")
         audio.export(mp3_path, format="mp3")
-        print("Audio converted to MP3")
-
     except Exception as e:
-        error_data = json.dumps({
-            "status": "error",
-            "message": f"Audio conversion error: {e}"
-        })
-        redis_stream.xadd(f"match_result_stream:{task_id}", {"data": error_data})
+        redis_stream.xadd(f"match_result_stream:{task_id}", {"data": json.dumps({
+            "status": "error", "message": f"Conversion failed: {e}"
+        })})
         return
 
     db = SessionLocal()
@@ -37,72 +32,59 @@ def match_fingerprint_task(self, audio_path: str, task_id: str):
         fingerprints = generate_fingerprint(audio_path)
         if not fingerprints:
             redis_stream.xadd(f"match_result_stream:{task_id}", {
-                "data": json.dumps({
-                    "status": "error",
-                    "message": "No fingerprints generated"
-                })
+                "data": json.dumps({"status": "error", "message": "No fingerprints"})
             })
             return
 
-        hash_offset_map = {fp[0]: fp[1] for fp in fingerprints}
-        hash_keys = list(hash_offset_map.keys())
-
-        result = db.execute(
-            select(Fingerprint.hash, Fingerprint.song_id, Fingerprint.offset)
-            .where(Fingerprint.hash.in_(hash_keys))
-        )
+        hash_map = {fp[0]: fp[1] for fp in fingerprints}
+        result = db.execute(select(Fingerprint.hash, Fingerprint.song_id, Fingerprint.offset)
+                            .where(Fingerprint.hash.in_(list(hash_map.keys()))))
         matches = result.fetchall()
 
-        match_scores = defaultdict(list)
+        score_map = defaultdict(list)
         for hash_val, song_id, db_offset in matches:
-            delta = db_offset - hash_offset_map[hash_val]
-            match_scores[song_id].append(round(delta, 2))
+            delta = db_offset - hash_map[hash_val]
+            score_map[song_id].append(round(delta, 2))
 
-        song_confidence = []
-        for song_id, deltas in match_scores.items():
-            delta_counts = Counter(deltas)
-            most_common_delta, count = delta_counts.most_common(1)[0]
-            song_confidence.append((song_id, count, most_common_delta))
+        confidence = []
+        for song_id, deltas in score_map.items():
+            most_common, count = Counter(deltas).most_common(1)[0]
+            confidence.append((song_id, count, most_common))
 
-        top_matches = sorted(song_confidence, key=lambda x: x[1], reverse=True)[:5]
-        song_ids = [song_id for song_id, _, _ in top_matches]
+        top = sorted(confidence, key=lambda x: x[1], reverse=True)[:5]
+        ids = [x[0] for x in top]
 
-        song_result = db.execute(select(Song).where(Song.id.in_(song_ids)))
-        songs = {song.id: song for song in song_result.scalars().all()}
+        songs = {s.id: s for s in db.execute(select(Song).where(Song.id.in_(ids))).scalars().all()}
 
         response = []
-        for song_id, confidence, best_offset in top_matches:
-            song = songs.get(song_id)
-            if song and song.youtube_data:
-                yt_url = song.youtube_data.get("video_url", "")
-                thumbnail = song.youtube_data.get("thumbnail_url", "")
+        for song_id, score, offset in top:
+            s = songs.get(song_id)
+            if s and s.youtube_data:
                 response.append({
-                    "song_id": song.id,
-                    "title": song.title,
-                    "yt_url": yt_url,
-                    "confidence": confidence,
-                    "best_offset": best_offset,
-                    "thumbnail": thumbnail
+                    "song_id": s.id,
+                    "title": s.title,
+                    "yt_url": s.youtube_data.get("video_url", ""),
+                    "thumbnail": s.youtube_data.get("thumbnail_url", ""),
+                    "confidence": score,
+                    "best_offset": offset
                 })
 
-        final_data = json.dumps({
-            "status": "success",
-            "matches": response
-        })
-
-        redis_stream.xadd(f"match_result_stream:{task_id}", {"data": final_data})
+        redis_stream.xadd(f"match_result_stream:{task_id}", {
+            "data": json.dumps({"status": "success", "matches": response})
+        }, maxlen=1)
         redis_stream.expire(f"match_result_stream:{task_id}", 300)
-        print(f"Streamed: match_result_stream:{task_id}")
-
     except Exception as e:
         redis_stream.xadd(f"match_result_stream:{task_id}", {
-            "data": json.dumps({
-                "status": "error",
-                "message": str(e)
-            })
+            "data": json.dumps({"status": "error", "message": str(e)})
         })
         raise self.retry(exc=e)
-
+    
     finally:
-        db.close()
-  
+    db.close()
+    for path in [audio_path, mp3_path]:
+        try:
+            os.remove(path)
+        except FileNotFoundError:
+            pass
+        except Exception as e:
+            print(f"Error deleting file {path}: {e}")

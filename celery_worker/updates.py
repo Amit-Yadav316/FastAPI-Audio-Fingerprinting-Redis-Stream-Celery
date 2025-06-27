@@ -48,46 +48,36 @@ async def task_status_ws(task_id: str, websocket: WebSocket):
     except WebSocketDisconnect:
         logging.error(f"WebSocket disconnected for task: {task_id}")
 
-redis_stream = Redis.from_url(settings.redis_pubsub_url, decode_responses=True)
+redis_stream = Redis.from_url(settings.redis_stream_url, decode_responses=True)
 
 @router.websocket("/ws/subscribe/{task_id}")
 async def subscribe_to_task(task_id: str, ws: WebSocket, timeout: float = 150.0):
     await ws.accept()
-    print(redis_stream.connection_pool.connection_kwargs)
     stream_key = f"match_result_stream:{task_id}"
-    print(f"Subscribing to stream: {stream_key}")
+    stream_id = "0-0"
     start_time = time.monotonic()
-    stream_id = "0-0" 
 
     try:
         while True:
-            elapsed = time.monotonic() - start_time
-            if elapsed > timeout:
-                if ws.application_state == WebSocketState.CONNECTED:
-                    await ws.send_json({
-                        "status": "error",
-                        "message": "Timeout: No result within 90 seconds"
-                    })
+            if (time.monotonic() - start_time) > timeout:
+                await ws.send_json({
+                    "status": "error",
+                    "message": f"Timeout: No result in {timeout} seconds"
+                })
                 break
 
-            result = await redis_stream.xread({stream_key: stream_id}, block=1000, count=1)
+            result = await redis_stream.xread({stream_key: stream_id}, block=5000, count=1)
 
             if result:
                 _, entries = result[0]
                 for stream_id, entry in entries:
                     data = json.loads(entry["data"])
-                    if ws.application_state == WebSocketState.CONNECTED:
-                        await ws.send_json(data)
-                    await redis_stream.xdel(stream_key, stream_id)    
+                    await ws.send_json(data)
+                    await redis_stream.xdel(stream_key, stream_id)
                     return
-
-            await asyncio.sleep(0.2)
-
     except WebSocketDisconnect:
-        pass
+        print(f"[WS] Disconnected: {task_id}")
     except Exception as e:
-        if ws.application_state == WebSocketState.CONNECTED:
-            await ws.send_json({"status": "error", "message": str(e)})
+        await ws.send_json({"status": "error", "message": str(e)})
     finally:
-        if ws.application_state == WebSocketState.CONNECTED:
-            await ws.close()
+        await ws.close()
