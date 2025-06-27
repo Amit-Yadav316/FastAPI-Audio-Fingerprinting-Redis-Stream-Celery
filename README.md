@@ -1,33 +1,13 @@
-# Wavvy — A Music Guessing System Based on Audio Fingerprints
-
-**Wavvy** is a lightweight and efficient music recognition system that uses **audio fingerprinting**, **real-time audio processing**, and **smart system architecture** — all **without any machine learning model but we can do add in future**. It emphasizes strong **data structure design**, **performance tuning**, and clean **system architecture**.
-
----->
-
-##  Features
-
-->  **Audio Fingerprinting**  
-  Converts raw audio into unique, compact hashes for quick database lookup and precise matching.
-
-->  **Real-time Matching and Streaming result on Websocket so that users know its done**  
-  Streams user audio input and responds with live track matches using a sliding-window hash matcher.
-
-->  **FastAPI + Celery (Async + Background Workers)**  
-  Non-blocking async backend with background-heavy processing handled via Celery and Redis.
-
--> **Redis Caching**  
-  Speeds up metadata lookup (e.g., Spotify/YouTube results) and supports hot query pre-caching.
-
--> **Spotify Integration**  
-  Automatically fetches metadata like song title, album, and artist name using Spotify's Web API.
-
--> **YouTube Metadata Support**  
-  Enriches results with YouTube video links for matched songs.
+--->
+## Performance Score
+![Screenshot 2025-06-27 074736](https://github.com/user-attachments/assets/baa4a139-17ad-4c0b-aa93-8307f01f0f1d)
+## Celery Success
+![Screenshot 2025-06-27 083354](https://github.com/user-attachments/assets/e51601f4-027d-4202-9f2a-9c5f9c890bbb)
 
 --->  
 ##  Getting Started
-Step 1 : git clone URL into directory and code . In Windows Powershell
-![Screenshot 2025-06-25 211204](https://github.com/user-attachments/assets/ad282679-f072-4728-b158-79d7f1f42370)
+Step 1 : git clone URL into directory in Windows Powershell and go to vs code using code .
+![Screenshot 2025-06-27 083441](https://github.com/user-attachments/assets/72fe3fd0-9edc-453f-9c3b-59ec851c3d94)
 
 Step 2 : Create virtual environment
 ![Screenshot 2025-06-25 210747](https://github.com/user-attachments/assets/aea5f096-bec6-46e4-a7bb-cc9e0f9ddf12)
@@ -63,7 +43,33 @@ These are my results
 Step 10 : You can create your front end and test and integrate and new things like fuzzy search , humming detection etc..
 BOOM YOU ARE DONE!!
 
+# Wavvy — A Music Guessing System Based on Audio Fingerprints
 
+**Wavvy** is a lightweight and efficient music recognition system that uses **audio fingerprinting**, **real-time audio processing**, and **smart system architecture** — all **without any machine learning model but we can do add in future**. It emphasizes strong **data structure design**, **performance tuning**, and clean **system architecture**.
+
+---->
+
+##  Features
+
+->  **Audio Fingerprinting**  
+  Converts raw audio into unique, compact hashes for quick database lookup and precise matching.
+
+->  **Real-time Matching and Streaming result on Websocket so that users know its done**  
+  Streams user audio input and responds with live track matches using a sliding-window hash matcher.
+
+->  **FastAPI + Celery (Async + Background Workers)**  
+  Non-blocking async backend with background-heavy processing handled via Celery and Redis.
+
+-> **Redis Caching**  
+  Speeds up metadata lookup (e.g., Spotify/YouTube results) and supports hot query pre-caching.
+
+-> **Spotify Integration**  
+  Automatically fetches metadata like song title, album, and artist name using Spotify's Web API.
+
+-> **YouTube Metadata Support**  
+  Enriches results with YouTube video links for matched songs.
+
+--->
 ## Why This Project?
 
 Wavvy is ideal if you want to:
@@ -74,7 +80,7 @@ Wavvy is ideal if you want to:
 -> Understand how to manage **background jobs**, **concurrency**, and **performance optimizations**.
 
 ---->
-## Important Note---> this is for learning where sometime i have used things which are not as much effected as other things like redis stream for one websocket end point but for other simple async result using state but you can use redis stream for every socket but for learning of both i have used both
+## Important Note---> this is for learning where sometime I have used things which are not as much effected as other things like redis stream for one websocket end point but for other simple async result using state but you can use redis stream for every socket but for learning of both i have used both.
 
 --->
 
