@@ -10,6 +10,7 @@ __pycache__/
 /uploads/
 /audios/
 /temp_audio/
+/audio_visual/
 
 node_modules/ 
 package-lock.json
